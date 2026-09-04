@@ -4,42 +4,144 @@
 #include <unordered_map>
 using namespace std;
 
-enum Status {
-  NO,
-  MAYBE,
-  YES
-};
+//-1 checked
+//-2 No
+//-3 Yes
+
+int find_max_maybe_count(vector<vector<int>> maybe_count_mtr) {
+  int max_count = 0;
+  int size_x = maybe_count_mtr.size();
+  int size_y = maybe_count_mtr[0].size();
+  for (int i = 0; i < size_x; i++) {
+    for (int j = 0; j < size_y; j++) {
+      if (maybe_count_mtr[i][j] > max_count)
+        max_count = maybe_count_mtr[i][j];
+    }
+  }
+  return max_count;
+}
 
 void draw_table(vector<vector<int>> values) {
+  int max_count = find_max_maybe_count(values);
   for (int i = 0; i < values[0].size(); i++) {
     for (int j = 0; j < values.size(); j++) {
-      if (values[j][i] == 68) {
-        cout << " | D";
+      if (values[j][i] == -3) {
+        cout << " | Y";
+      }else if (values[j][i] == -2){
+        cout << " | N";
+      }else if (values[j][i] == -1){
+        cout << " | #";
+      }else if (values[j][i] == max_count){
+        cout << " | ?";
       }else {
-        cout << " | " << values[j][i];
+        cout << " |  ";
       }
     }
     cout << " |" << endl;
   }
 }
 
-void compute_maybe_count(string coords, vector<vector<int>> &maybe_count_mtr) {
+void compute_maybe_count(string coords, int item, vector<vector<int>> &maybe_count_mtr) {
   int size_x = maybe_count_mtr.size();
   int size_y = maybe_count_mtr[0].size();
   int curr_x = coords[1] - '0' - 1;
   int curr_y = coords[0] - '0' - 1;
   //36
-  maybe_count_mtr[curr_x][curr_y] = (int)'#';
+  if (item == -3) {
+    maybe_count_mtr[curr_x][curr_y] = -3;
+    return;
+  }
+  maybe_count_mtr[curr_x][curr_y] = -1;
   for (int x_mod = -1; x_mod < 2; x_mod++) {
     for (int y_mod = -1; y_mod < 2; y_mod++) {
       int ind_x = curr_x + x_mod;
       int ind_y = curr_y + y_mod;
       if (ind_x < 0 || ind_x >= size_x || ind_y < 0 || ind_y >= size_y)
         continue;
-      if (ind_x == 0 && ind_y == 0)
+      if (x_mod == 0 && y_mod == 0)
         continue;
-      maybe_count_mtr[curr_x + x_mod][curr_y + y_mod] += 1;
+      if (maybe_count_mtr[ind_x][ind_y] >= 0)
+        maybe_count_mtr[ind_x][ind_y] += 1;
     }
+  }
+}
+
+void find_certain_yes(unordered_map<string, int> &visited_dict, vector<vector<int>> &maybe_count_mtr) {
+  int size_x = maybe_count_mtr.size();
+  int size_y = maybe_count_mtr[0].size();
+  int maybe_counter;
+  int yes_counter;
+  for (auto item : visited_dict) {
+    maybe_counter = 0;
+    yes_counter = 0;
+    int curr_x = item.first[1] - '0' - 1;
+    int curr_y = item.first[0] - '0' - 1;
+    for (int x_mod = -1; x_mod < 2; x_mod++) {
+      for (int y_mod = -1; y_mod < 2; y_mod++) {
+        int ind_x = curr_x + x_mod;
+        int ind_y = curr_y + y_mod;
+        if (ind_x < 0 || ind_x >= size_x || ind_y < 0 || ind_y >= size_y)
+          continue;
+        if (x_mod == 0 && y_mod == 0)
+          continue;
+        if (maybe_count_mtr[ind_x][ind_y] >= 0)
+          maybe_counter++;
+        if (maybe_count_mtr[ind_x][ind_y] == -3)
+          yes_counter++;
+        }
+      }
+    if (maybe_counter > item.second - yes_counter)
+      continue;
+    for (int x_mod = -1; x_mod < 2; x_mod++) {
+      for (int y_mod = -1; y_mod < 2; y_mod++) {
+        int ind_x = curr_x + x_mod;
+        int ind_y = curr_y + y_mod;
+        if (ind_x < 0 || ind_x >= size_x || ind_y < 0 || ind_y >= size_y)
+          continue;
+        if (x_mod == 0 && y_mod == 0)
+          continue;
+        if (maybe_count_mtr[ind_x][ind_y] >= 0)
+          maybe_count_mtr[ind_x][ind_y] = -3;
+      }
+    }
+  }
+}
+
+void find_certain_no(unordered_map<string, int> &visited_dict, vector<vector<int>> &maybe_count_mtr) {
+  int size_x = maybe_count_mtr.size();
+  int size_y = maybe_count_mtr[0].size();
+  int yes_counter;
+  for (auto item : visited_dict) {
+    yes_counter = 0;
+    int curr_x = item.first[1] - '0' - 1;
+    int curr_y = item.first[0] - '0' - 1;
+    for (int x_mod = -1; x_mod < 2; x_mod++) {
+      for (int y_mod = -1; y_mod < 2; y_mod++) {
+        int ind_x = curr_x + x_mod;
+        int ind_y = curr_y + y_mod;
+        if (ind_x < 0 || ind_x >= size_x || ind_y < 0 || ind_y >= size_y)
+          continue;
+        if (x_mod == 0 && y_mod == 0)
+          continue;
+        if (maybe_count_mtr[ind_x][ind_y] == -3)
+          yes_counter++;
+        }
+      }
+    if (yes_counter < item.second)
+      continue;
+    for (int x_mod = -1; x_mod < 2; x_mod++) {
+      for (int y_mod = -1; y_mod < 2; y_mod++) {
+        int ind_x = curr_x + x_mod;
+        int ind_y = curr_y + y_mod;
+        if (ind_x < 0 || ind_x >= size_x || ind_y < 0 || ind_y >= size_y)
+          continue;
+        if (x_mod == 0 && y_mod == 0)
+          continue;
+        if (maybe_count_mtr[ind_x][ind_y] >= 0)
+          maybe_count_mtr[ind_x][ind_y] = -2;
+      }
+    }
+    visited_dict.erase(item.first);
   }
 }
 
@@ -53,31 +155,46 @@ int main() {
     cout << "Enter width: ";
     cin >> size_x;
 
+    vector<vector<int>> old_maybe_count_mtr(size_x);
+    unordered_map<string, int> old_visited_dict;
     vector<vector<int>> maybe_count_mtr(size_x);
-    vector<vector<Status>> stat_mtr(size_x);
     unordered_map<string, int> visited_dict;
+    string key;
+    int item;
 
     for (int i = 0; i < size_x; i++) {
-        for (int j = 0; j < size_y; j++) {
-            maybe_count_mtr[i].push_back(0);
-        }
+      for (int j = 0; j < size_y; j++) {
+        maybe_count_mtr[i].push_back(0);
+      }
     }
-    cout << "Enter YXN (D) or exit" << endl;
+    cout << "Enter YXN (y) or undo/exit" << endl;
     while (true) {
       cin >> input;
       if (input == "exit")
         exit(0);
+      if (input == "undo") {
+        maybe_count_mtr = old_maybe_count_mtr;
+        visited_dict = old_visited_dict;
+        draw_table(maybe_count_mtr);
+        continue;
+      }
       try {
-        if (input[2] == 'D') {
-          visited_dict[input.substr(0,2)] = (int)'D';
+        key = input.substr(0,2);
+        if (input[2] == 'y') {
+          item = -3;
         }else {
-          visited_dict[input.substr(0,2)] = input[2] - '0';
+          item = input[2] - '0';
+          visited_dict[key] = item;
         }
       } 
       catch (const char* msg) {
         cout << "Invalid input" << endl;
       }
-      compute_maybe_count(input.substr(0,2), maybe_count_mtr);
+      old_maybe_count_mtr = maybe_count_mtr;
+      old_visited_dict = visited_dict;
+      compute_maybe_count(key, item, maybe_count_mtr);
+      find_certain_yes(visited_dict, maybe_count_mtr);
+      find_certain_no(visited_dict, maybe_count_mtr);
       draw_table(maybe_count_mtr);
     }
   }
