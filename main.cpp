@@ -21,12 +21,15 @@ int find_max_maybe_count(vector<vector<int>> maybe_count_mtr) {
   return max_count;
 }
 
-void draw_table(vector<vector<int>> values) {
+void draw_table(vector<vector<int>> values, vector<vector<int>> old_values) {
   int max_count = find_max_maybe_count(values);
   for (int i = 0; i < values[0].size(); i++) {
     for (int j = 0; j < values.size(); j++) {
       if (values[j][i] == -3) {
-        cout << " | Y";
+        if (old_values[j][i] != -3)
+          cout << " | y";
+        else
+          cout << " | Y";
       }else if (values[j][i] == -2){
         cout << " | N";
       }else if (values[j][i] == -1){
@@ -46,7 +49,6 @@ void compute_maybe_count(string coords, int item, vector<vector<int>> &maybe_cou
   int size_y = maybe_count_mtr[0].size();
   int curr_x = coords[1] - '0' - 1;
   int curr_y = coords[0] - '0' - 1;
-  //36
   if (item == -3) {
     maybe_count_mtr[curr_x][curr_y] = -3;
     return;
@@ -175,9 +177,11 @@ int main() {
       if (input == "undo") {
         maybe_count_mtr = old_maybe_count_mtr;
         visited_dict = old_visited_dict;
-        draw_table(maybe_count_mtr);
+        draw_table(maybe_count_mtr, old_maybe_count_mtr);
         continue;
       }
+      if (input == "next")
+        break;
       try {
         key = input.substr(0,2);
         if (input[2] == 'y') {
@@ -195,7 +199,7 @@ int main() {
       compute_maybe_count(key, item, maybe_count_mtr);
       find_certain_yes(visited_dict, maybe_count_mtr);
       find_certain_no(visited_dict, maybe_count_mtr);
-      draw_table(maybe_count_mtr);
+      draw_table(maybe_count_mtr, old_maybe_count_mtr);
     }
   }
 }
